@@ -1,23 +1,63 @@
-import logo from './logo.svg';
-import './App.css';
+import db, { firebaseConfig } from "./firebase.js";
+import React, { useEffect, useState } from "react";
+import { Button } from "@mui/material";
+import { FormControl, Input, InputLabel } from "@mui/material";
+import To_do from "./To_do";
+import "./App.css";
+import { initializeApp } from "firebase/app";
+import {
+  addDoc,
+  onSnapshot,
+  collection,
+  query,
+  serverTimestamp,
+  orderBy,
+  where,
+} from "firebase/firestore";
 
 function App() {
+  const [todos, setTodos] = useState([]);
+  const [input, setInput] = useState("");
+
+  useEffect(() => {
+    const q = query(collection(db, "todos"), orderBy("timestamp", "desc"));
+    const unsub = onSnapshot(q, (querySnapshot) => {
+      setTodos(querySnapshot.docs.map((doc) => doc.data().text));
+    });
+  }, []);
+
+  const addToDo = (e) => {
+    e.preventDefault();
+    addDoc(collection(db, "todos"), {
+      text: input,
+      timestamp: serverTimestamp(),
+    });
+
+    setInput("");
+  };
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+      <h1>Hello World</h1>
+      <form>
+        <FormControl>
+          <InputLabel>Write A To-Do</InputLabel>
+          <Input value={input} onChange={(e) => setInput(e.target.value)} />
+        </FormControl>
+        <Button
+          disabled={!input}
+          type="submit"
+          onClick={addToDo}
+          variant="contained"
         >
-          Learn React
-        </a>
-      </header>
+          Add To-Do
+        </Button>
+      </form>
+
+      <ul>
+        {todos.map((todo) => (
+          <To_do text={todo}></To_do>
+        ))}
+      </ul>
     </div>
   );
 }
